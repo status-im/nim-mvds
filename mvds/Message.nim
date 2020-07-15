@@ -27,10 +27,10 @@ proc hash*(msg: Message) =
     ).data
   )
 
-proc newMessage*(group: seq[byte], body: seq[byte]): Message =
+proc newMessage*(group: seq[byte], body: seq[byte], time: int64 = getTime().toUnix()): Message =
   result = Message(
     group: group,
-    time: getTime().toUnix(),
+    time: time,
     body: body
   )
   result.hash()
