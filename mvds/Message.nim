@@ -9,7 +9,7 @@ type
     group* {.fieldNumber: 1.}: seq[byte] #Assigned into a group by developer, not protocol.
     time* {.pint, fieldNumber: 2.}: int64
     body* {.fieldNumber: 3.}: seq[byte]
-    id* {.dontSerialize.}: seq[byte]
+    id {.dontSerialize.}: seq[byte]
 
   Payload* = object
     acks* {.fieldNumber: 1.}: seq[seq[byte]]
@@ -17,29 +17,27 @@ type
     requests* {.fieldNumber: 3.}: seq[seq[byte]]
     messages* {.fieldNumber: 4.}: seq[Message]
 
-proc hash*(msg: Message) =
-  msg.id = @(
-    sha256.digest(
-      cast[seq[byte]]("MESSAGE_ID") &
-      msg.group &
-      @(uint64(msg.time).toBytesLE()) &
-      msg.body
-    ).data
-  )
+proc id*(msg: Message): seq[byte] =
+  if msg.id.len == 0:
+    msg.id = @(
+      sha256.digest(
+        cast[seq[byte]]("MESSAGE_ID") &
+        msg.group &
+        @(uint64(msg.time).toBytesLE()) &
+        msg.body
+      ).data
+    )
+  result = msg.id
 
-proc newMessage*(group: seq[byte], body: seq[byte], time: int64 = getTime().toUnix()): Message =
-  result = Message(
+proc newMessage*(group: seq[byte], body: seq[byte], time: int64 = getTime().toUnix()): Message {.inline.} =
+  Message(
     group: group,
     time: time,
     body: body
   )
-  result.hash()
 
 when defined MVDS_TESTS:
   proc `==`*(lhs: Message, rhs: Message): bool {.inline.} =
-    (
-      (lhs.group == rhs.group) and
-      (lhs.time == rhs.time) and
-      (lhs.body == rhs.body) and
-      (lhs.id == rhs.id)
-    )
+    (lhs.group == rhs.group) and
+    (lhs.time == rhs.time) and
+    (lhs.body == rhs.body)

@@ -14,10 +14,10 @@ suite "Interactive":
     var
       alice: MVDSNode = newMVDSNode(true)
       bob: MVDSNode = newMVDSNode(true)
-      res: tuple[messages: seq[Message], response: seq[byte]]
+      res: tuple[messages: seq[Message], response: Payload]
 
   test "Nothing":
-    check alice.handle(@[]) == res
+    check alice.handle(Payload()) == res
 
   test "Single message":
     var
@@ -30,7 +30,7 @@ suite "Interactive":
 
     var msg: Message = newMessage(groupID, body)
     alice.offer(msg, 0)
-    res = alice.handle(@[])
+    res = alice.handle(Payload())
     check:
       res.messages.len == 0
       alice.state.messages.len == 1
@@ -77,5 +77,5 @@ suite "Interactive":
 
     res = alice.handle(res.response)
     check:
-      alice.handle(res.response) == (messages: @[], response: @[])
+      alice.handle(res.response) == (messages: @[], response: Payload())
       alice.state.messages.len == 0

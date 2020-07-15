@@ -14,7 +14,7 @@ suite "Batch":
     var
       alice: MVDSNode = newMVDSNode(false)
       bob: MVDSNode = newMVDSNode(false)
-      res: tuple[messages: seq[Message], response: seq[byte]]
+      res: tuple[messages: seq[Message], response: Payload]
     var
       groupID: seq[byte] = newSeq[byte](rand(100))
       body: seq[byte] = newSeq[byte](rand(500))
@@ -25,11 +25,11 @@ suite "Batch":
     var msg: Message = newMessage(groupID, body)
 
   test "Nothing":
-    check alice.handle(@[]) == res
+    check alice.handle(Payload()) == res
 
   test "Single message":
     alice.offer(msg, 0)
-    res = alice.handle(@[])
+    res = alice.handle(Payload())
     check:
       res.messages.len == 0
       alice.state.messages.len == 1
@@ -49,14 +49,14 @@ suite "Batch":
       bob.state.messages.len == 0
 
     check:
-      alice.handle(res.response) == (messages: @[], response: @[])
+      alice.handle(res.response) == (messages: @[], response: Payload())
       alice.state.messages.len == 0
 
   test "No ack":
     alice.offer(msg, 0)
-    var origRes: tuple[messages: seq[Message], response: seq[byte]] = alice.handle(@[])
+    var origRes: tuple[messages: seq[Message], response: Payload] = alice.handle(Payload())
     for i in 2 ..< 7:
-      res = alice.handle(@[])
+      res = alice.handle(Payload())
       check:
         res == origRes
         res.messages.len == 0
@@ -72,13 +72,13 @@ suite "Batch":
 
   test "Epoch manipulation":
     alice.offer(msg, 0)
-    var origRes: tuple[messages: seq[Message], response: seq[byte]] = alice.handle(@[])
+    var origRes: tuple[messages: seq[Message], response: Payload] = alice.handle(Payload())
     check alice.updateEpoch(msg.id, 7)
     for i in 1 ..< 7:
-      res = alice.handle(@[])
+      res = alice.handle(Payload())
       check:
         res.messages.len == 0
-        res.response.len == 0
+        res.response == Payload()
         alice.state.messages.len == 1
         alice.state.messages.hasKey(msg.id)
 
@@ -90,7 +90,7 @@ suite "Batch":
         )
 
     check:
-      alice.handle(@[]) == origRes
+      alice.handle(Payload()) == origRes
       alice.state.messages.len == 1
 
     discard alice.handle(bob.handle(origRes.response).response)

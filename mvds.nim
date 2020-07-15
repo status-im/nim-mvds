@@ -22,8 +22,5 @@ proc offer*(node: MVDSNode, msg: Message, epoch: int) {.inline.} =
 proc updateEpoch*(node: MVDSNode, msgID: seq[byte], epoch: int): bool =
   node.state.updateEpoch(msgID, epoch)
 
-proc handle*(node: MVDSNode, msg: seq[byte]): tuple[messages: seq[Message], response: seq[byte]] =
-  var payload: Payload = Protobuf.decode(msg, Payload)
-  for msg in payload.messages:
-    msg.hash()
-  return (payload.messages, Protobuf.encode(node.state.handle(payload)))
+proc handle*(node: MVDSNode, payload: Payload): tuple[messages: seq[Message], response: Payload] {.inline.} =
+  (payload.messages, node.state.handle(payload))
